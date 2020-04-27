@@ -24,6 +24,17 @@ from object_detection.core import standard_fields as fields
 from object_detection.protos import input_reader_pb2
 from object_detection.utils import label_map_util
 
+############################
+##### NIKHIL Start #########
+############################
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import image_ops
+from tensorflow.python.ops import array_ops
+from tensorflow.python.framework import dtypes
+############################
+##### NIKHIL End ###########
+############################
+
 slim_example_decoder = tf.contrib.slim.tfexample_decoder
 
 
@@ -464,3 +475,128 @@ class TfExampleDecoder(data_decoder.DataDecoder):
         tf.greater(tf.size(png_masks), 0),
         lambda: tf.map_fn(decode_png_mask, png_masks, dtype=tf.float32),
         lambda: tf.zeros(tf.to_int32(tf.stack([0, height, width]))))
+
+
+############################
+##### NIKHIL Start #########
+############################
+class XMLDecoder(data_decoder.DataDecoder):
+  """Tensorflow XML file decoder."""
+
+  def __init__(self, label_map_proto_file=None,):
+    """Sets the _name_to_id_table from proto file.
+
+    Args:
+      label_map_proto_file: a file path to a
+        object_detection.protos.StringIntLabelMap proto. If provided, then the
+        mapped IDs of 'image/object/class/text' will take precedence over the
+        existing 'image/object/class/label' ID.  Also, if provided, it is
+        assumed that 'image/object/class/text' will be in the data.
+
+    Raises:
+      ValueError: If `label_map_proto_file` option is not provided.
+    """    
+    if label_map_proto_file:
+      name_to_id = label_map_util.get_label_map_dict(
+        label_map_proto_file, use_display_name=False)
+      # We use a default_value of -1, but we expect all labels to be contained
+      # in the label map.
+      name_to_id_table = tf.contrib.lookup.HashTable(
+          initializer=tf.contrib.lookup.KeyValueTensorInitializer(
+              keys=tf.constant(list(name_to_id.keys())),
+              values=tf.constant(list(name_to_id.values()), dtype=tf.int64)),
+          default_value=-1)
+      display_name_to_id = label_map_util.get_label_map_dict(
+          label_map_proto_file, use_display_name=True)
+      # We use a default_value of -1, but we expect all labels to be contained
+      # in the label map.
+      display_name_to_id_table = tf.contrib.lookup.HashTable(
+          initializer=tf.contrib.lookup.KeyValueTensorInitializer(
+              keys=tf.constant(list(display_name_to_id.keys())),
+              values=tf.constant(
+                  list(display_name_to_id.values()), dtype=tf.int64)),
+          default_value=-1)
+
+      self._name_to_id_table = name_to_id_table
+      self._display_name_to_id_table = display_name_to_id_table
+    else:
+      raise ValueError('Must provide a label map proto file.')
+
+
+  def decode(self, xml_parsed_string_list):
+    """Decodes serialized tensorflow example and returns a tensor dictionary.
+
+    Args:
+      xml_parsed_string_list: a list of strings tensor holding info from xml file.
+        [b'Y:\\Belief_Autodetection\\LogoData\\USA_DUMP\\USA_DUMP\\ATT_MENU\\MPEG100.jpg' 
+         b'logo' b'688' b'386' b'785' b'439' b'logo' b'221' b'366' b'253' b'387']
+
+    Returns:
+      A dictionary of the following tensors.
+      fields.InputDataFields.image - 3D uint8 tensor of shape [None, None, 3]
+        containing image.
+      fields.InputDataFields.groundtruth_boxes - 2D float32 tensor of shape
+        [None, 4] containing box corners.
+      fields.InputDataFields.groundtruth_classes - 1D int64 tensor of shape
+        [None] containing classes for the boxes.
+      fields.InputDataFields.groundtruth_weights - 1D float32 tensor of
+        shape [None] indicating the weights of groundtruth boxes.
+    """
+    tensor_dict = dict()
+    
+    # Get Image
+    image_buffer = tf.read_file(xml_parsed_string_list[0])
+    def decode_image():
+      """Decodes a image based on the headers."""
+      return math_ops.cast(
+          image_ops.decode_image(image_buffer, channels=3),
+          dtypes.uint8)
+
+    image = decode_image()
+    tensor_dict[fields.InputDataFields.image] = image
+    tensor_dict[fields.InputDataFields.image].set_shape([None, None, 3])
+
+    # Get box classes and locations
+    def get_box_class_and_loc(xml_parsed_string_list):
+      unmapped_box_classes = xml_parsed_string_list[1::5]
+      box_classes = tf.maximum(self._name_to_id_table.lookup(unmapped_box_classes),
+                      self._display_name_to_id_table.lookup(unmapped_box_classes))
+      
+      box_locs = tf.reshape(xml_parsed_string_list[1:], [-1, 5])
+      box_locs = tf.transpose(box_locs)
+      indices = [[1], [2], [3], [4]]
+      box_locs = tf.gather_nd(box_locs, indices)
+      box_locs = tf.transpose(box_locs)
+      box_locs = tf.strings.to_number(box_locs, out_type=tf.dtypes.int32)
+      return box_classes, box_locs
+
+    def get_blank_tensors():
+      box_classes = tf.convert_to_tensor([], dtype=tf.dtypes.int64)
+
+      sides = []
+      for k in range(4):
+        side = tf.convert_to_tensor([], dtype=tf.dtypes.int32)
+        side = array_ops.expand_dims(side, 0)
+        sides.append(side)
+      box_locs = array_ops.concat(sides, 0)
+      box_locs = array_ops.transpose(box_locs)
+      return box_classes, box_locs
+
+    box_classes, box_locs = tf.cond(tf.equal(xml_parsed_string_list[1], b'none'),
+            lambda: get_blank_tensors(),
+            lambda: get_box_class_and_loc(xml_parsed_string_list)
+            )
+
+    tensor_dict[fields.InputDataFields.groundtruth_classes] = box_classes
+    tensor_dict[fields.InputDataFields.groundtruth_boxes] = box_locs
+
+    # Set groundtruth box weights. Setting as all 1's in our case.
+    tensor_dict[fields.InputDataFields.groundtruth_weights] = tf.ones(
+          [tf.shape(box_classes)[0]],
+          dtype=tf.float32)
+    
+    return tensor_dict
+
+############################
+##### NIKHIL End ###########
+############################  

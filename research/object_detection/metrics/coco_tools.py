@@ -233,9 +233,9 @@ class COCOEvalWrapper(cocoeval.COCOeval):
     Raises:
       ValueError: If category_stats does not exist.
     """
-    self.evaluate()
-    self.accumulate()
-    self.summarize()
+    self.my_evaluate()
+    self.my_accumulate()
+    self.my_summarize()
 
     summary_metrics = OrderedDict([
         ('Precision/mAP', self.stats[0]),

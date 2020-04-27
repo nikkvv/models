@@ -116,11 +116,32 @@ def main(_):
       model_config=model_config,
       is_training=True)
 
+############################
+##### NIKHIL Start #########
+############################
+
+  def xml_dataset_get_next(config):
+    return dataset_builder.make_initializable_iterator(
+        dataset_builder.xml_dataset_build(config)).get_next()
+
+############################
+##### NIKHIL End ###########
+############################
+
   def get_next(config):
     return dataset_builder.make_initializable_iterator(
         dataset_builder.build(config)).get_next()
 
-  create_input_dict_fn = functools.partial(get_next, input_config)
+############################
+##### NIKHIL Start #########
+############################
+
+  # create_input_dict_fn = functools.partial(get_next, input_config)
+  create_input_dict_fn = functools.partial(xml_dataset_get_next, input_config)
+
+############################
+##### NIKHIL End ###########
+############################
 
   env = json.loads(os.environ.get('TF_CONFIG', '{}'))
   cluster_data = env.get('cluster', None)
