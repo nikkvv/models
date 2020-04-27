@@ -233,24 +233,45 @@ class COCOEvalWrapper(cocoeval.COCOeval):
     Raises:
       ValueError: If category_stats does not exist.
     """
+
+    # Nikhil
     self.my_evaluate()
     self.my_accumulate()
     self.my_summarize()
+    # self.evaluate()
+    # self.accumulate()
+    # self.summarize()
 
+    # Nikhil
     summary_metrics = OrderedDict([
-        ('Precision/mAP', self.stats[0]),
-        ('Precision/mAP@.50IOU', self.stats[1]),
-        ('Precision/mAP@.75IOU', self.stats[2]),
-        ('Precision/mAP (small)', self.stats[3]),
-        ('Precision/mAP (medium)', self.stats[4]),
-        ('Precision/mAP (large)', self.stats[5]),
-        ('Recall/AR@1', self.stats[6]),
-        ('Recall/AR@10', self.stats[7]),
-        ('Recall/AR@100', self.stats[8]),
-        ('Recall/AR@100 (small)', self.stats[9]),
-        ('Recall/AR@100 (medium)', self.stats[10]),
-        ('Recall/AR@100 (large)', self.stats[11])
+          ('Precision@0.2IoU@0.5Conf', self.stats[0]),
+          ('Precision@0.3IoU@0.5Conf', self.stats[1]),
+          ('Precision@0.5IoU@0.5Conf', self.stats[2]),
+          ('Precision@0.2IoU@0.7Conf', self.stats[3]),
+          ('Precision@0.3IoU@0.7Conf', self.stats[4]),
+          ('Precision@0.5IoU@0.7Conf', self.stats[5]),
+          ('Recall@0.2IoU@0.5Conf', self.stats[6]),
+          ('Recall@0.3IoU@0.5Conf', self.stats[7]),
+          ('Recall@0.5IoU@0.5Conf', self.stats[8]),
+          ('Recall@0.2IoU@0.7Conf', self.stats[9]),
+          ('Recall@0.3IoU@0.7Conf', self.stats[10]),
+          ('Recall@0.5IoU@0.7Conf', self.stats[11])
     ])
+    # summary_metrics = OrderedDict([
+    #     ('Precision/mAP', self.stats[0]),
+    #     ('Precision/mAP@.50IOU', self.stats[1]),
+    #     ('Precision/mAP@.75IOU', self.stats[2]),
+    #     ('Precision/mAP (small)', self.stats[3]),
+    #     ('Precision/mAP (medium)', self.stats[4]),
+    #     ('Precision/mAP (large)', self.stats[5]),
+    #     ('Recall/AR@1', self.stats[6]),
+    #     ('Recall/AR@10', self.stats[7]),
+    #     ('Recall/AR@100', self.stats[8]),
+    #     ('Recall/AR@100 (small)', self.stats[9]),
+    #     ('Recall/AR@100 (medium)', self.stats[10]),
+    #     ('Recall/AR@100 (large)', self.stats[11])
+    # ])
+
     if not include_metrics_per_category:
       return summary_metrics, {}
     if not hasattr(self, 'category_stats'):

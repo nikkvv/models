@@ -273,6 +273,11 @@ def build(input_reader_config, batch_size=None, transform_input_data_fn=None):
       dataset = dataset.apply(
           tf.contrib.data.batch_and_drop_remainder(batch_size))
     dataset = dataset.prefetch(input_reader_config.num_prefetch_batches)
+
+    # Nikhil Added
+    print("Nikhil - Removing errors !!!")
+    dataset = dataset.apply(tf.data.experimental.ignore_errors())
+
     return dataset
 
   raise ValueError('Unsupported input_reader_config.')
@@ -343,6 +348,11 @@ def xml_dataset_build(input_reader_config, batch_size=None, transform_input_data
       dataset = dataset.apply(
           tf.contrib.data.batch_and_drop_remainder(batch_size))
     dataset = dataset.prefetch(input_reader_config.num_prefetch_batches)
+
+    # Nikhil Added
+    print("Nikhil - Removing errors !!!")
+    dataset = dataset.apply(tf.data.experimental.ignore_errors())
+    
     return dataset
 
   raise ValueError('Unsupported input_reader_config.')

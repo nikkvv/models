@@ -325,6 +325,10 @@ def _run_checkpoint_once(tensor_dict,
         else:
           result_dict, result_losses_dict = batch_processor(
               tensor_dict, sess, batch, counters, losses_dict=losses_dict)
+        
+        # NIKHIL
+        # print(result_dict)
+
         if not result_dict:
           continue
         for key, value in iter(result_losses_dict.items()):
@@ -362,6 +366,10 @@ def _run_checkpoint_once(tensor_dict,
             tf.logging.info('Finished dumping to json file.')
       for evaluator in evaluators:
         metrics = evaluator.evaluate()
+
+        # NIKHIL
+        # print(metrics)
+
         evaluator.clear()
         if any(key in all_evaluator_metrics for key in metrics):
           raise ValueError('Metric names between evaluators must not collide.')
