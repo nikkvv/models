@@ -111,11 +111,32 @@ def main(unused_argv):
   model_fn = functools.partial(
       model_builder.build, model_config=model_config, is_training=False)
 
+############################
+##### NIKHIL Start #########
+############################
+
+  def xml_dataset_get_next(config):
+    return dataset_builder.make_initializable_iterator(
+        dataset_builder.xml_dataset_build(config)).get_next()
+
+############################
+##### NIKHIL End ###########
+############################
+
   def get_next(config):
     return dataset_builder.make_initializable_iterator(
         dataset_builder.build(config)).get_next()
 
-  create_input_dict_fn = functools.partial(get_next, input_config)
+############################
+##### NIKHIL Start #########
+############################
+
+  # create_input_dict_fn = functools.partial(get_next, input_config)
+  create_input_dict_fn = functools.partial(xml_dataset_get_next, input_config)
+
+############################
+##### NIKHIL End ###########
+############################
 
   categories = label_map_util.create_categories_from_labelmap(
       input_config.label_map_path)

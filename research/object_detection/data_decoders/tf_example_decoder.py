@@ -528,8 +528,17 @@ class XMLDecoder(data_decoder.DataDecoder):
 
     Args:
       xml_parsed_string_list: a list of strings tensor holding info from xml file.
-        [b'Y:\\Belief_Autodetection\\LogoData\\USA_DUMP\\USA_DUMP\\ATT_MENU\\MPEG100.jpg' 
-         b'logo' b'688' b'386' b'785' b'439' b'logo' b'221' b'366' b'253' b'387']
+        [b'Y:\\Belief_Autodetection\\LogoData\\USA_DUMP\\USA_DUMP\\ATT_MENU\\MPEG100.jpg' b'540 b'960'
+         b'logo' b'688' b'386' b'785' b'439' 
+         b'logo' b'221' b'366' b'253' b'387']
+        The format is like :-
+        [
+          image_name, height, width, 
+          box1_class, box1_ymin, box1_xmin, box1_ymax, box1_xmax, 
+          box2_class, box2_ymin, box2_xmin, box2_ymax, box2_xmax
+          .....
+          .....
+        ]
 
     Returns:
       A dictionary of the following tensors.
@@ -543,9 +552,15 @@ class XMLDecoder(data_decoder.DataDecoder):
         shape [None] indicating the weights of groundtruth boxes.
     """
     tensor_dict = dict()
+
+    # Get Image name
+    tensor_dict[fields.InputDataFields.source_id] = xml_parsed_string_list[0]
     
     # Get Image
     image_buffer = tf.read_file(xml_parsed_string_list[0])
+    image_height = tf.strings.to_number(xml_parsed_string_list[1], out_type=tf.dtypes.float32)
+    image_width = tf.strings.to_number(xml_parsed_string_list[2], out_type=tf.dtypes.float32)
+
     def decode_image():
       """Decodes a image based on the headers."""
       return math_ops.cast(
@@ -558,16 +573,22 @@ class XMLDecoder(data_decoder.DataDecoder):
 
     # Get box classes and locations
     def get_box_class_and_loc(xml_parsed_string_list):
-      unmapped_box_classes = xml_parsed_string_list[1::5]
+      unmapped_box_classes = xml_parsed_string_list[3::5]
       box_classes = tf.maximum(self._name_to_id_table.lookup(unmapped_box_classes),
                       self._display_name_to_id_table.lookup(unmapped_box_classes))
       
-      box_locs = tf.reshape(xml_parsed_string_list[1:], [-1, 5])
+      box_locs = tf.reshape(xml_parsed_string_list[3:], [-1, 5])
       box_locs = tf.transpose(box_locs)
       indices = [[1], [2], [3], [4]]
       box_locs = tf.gather_nd(box_locs, indices)
       box_locs = tf.transpose(box_locs)
-      box_locs = tf.strings.to_number(box_locs, out_type=tf.dtypes.int32)
+      box_locs = tf.strings.to_number(box_locs, out_type=tf.dtypes.float32)
+      box_locs_ymins = box_locs[:,0]/image_height
+      box_locs_xmins = box_locs[:,1]/image_width
+      box_locs_ymaxs = box_locs[:,2]/image_height
+      box_locs_xmaxs = box_locs[:,3]/image_width
+      box_locs = tf.stack([box_locs_ymins, box_locs_xmins, box_locs_ymaxs, box_locs_xmaxs], axis=1)
+
       return box_classes, box_locs
 
     def get_blank_tensors():
@@ -575,7 +596,7 @@ class XMLDecoder(data_decoder.DataDecoder):
 
       sides = []
       for k in range(4):
-        side = tf.convert_to_tensor([], dtype=tf.dtypes.int32)
+        side = tf.convert_to_tensor([], dtype=tf.dtypes.float32)
         side = array_ops.expand_dims(side, 0)
         sides.append(side)
       box_locs = array_ops.concat(sides, 0)

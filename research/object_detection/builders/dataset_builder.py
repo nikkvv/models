@@ -90,11 +90,23 @@ def xml_parse_function(filename):
   # Read xml file
   image_string = tf.read_file(filename)
 
-  # Get image name from xml
+  # Get image name from xml. Check the xml files for actual parsing logic.
   image_name = tf.strings.split([image_string], sep='<path>')
   image_name = image_name.values[-1]
   image_name = tf.strings.split([image_name], sep='</path>')
   image_name = image_name.values[0]
+
+  # <width>785</width>
+  # <height>439</height>
+  image_w = tf.strings.split([image_string], sep='<width>')
+  image_w = image_w.values[-1]
+  image_w = tf.strings.split([image_w], sep='</width>')
+  image_w = image_w.values[0]
+
+  image_h = tf.strings.split([image_string], sep='<height>')
+  image_h = image_h.values[-1]
+  image_h = tf.strings.split([image_h], sep='</height>')
+  image_h = image_h.values[0]
 
   # Get image_boxes
   # tf.split() return SparseTensor. Therefore using .values
@@ -155,7 +167,7 @@ def xml_parse_function(filename):
   bndboxes = tf.reshape(bndboxes, [-1])
 
   # Returned concatenated tensor of image name and bounding box info
-  return tf.concat([[image_name], bndboxes], axis=0)
+  return tf.concat([[image_name], [image_h], [image_w], bndboxes], axis=0)
 
 
 def xml_read_dataset(input_files, config):

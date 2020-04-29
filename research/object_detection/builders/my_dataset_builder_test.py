@@ -48,7 +48,7 @@ class MyDatasetBuilderTest(tf.test.TestCase):
             output_dict = sess.run(tensor_dict)
             print(output_dict)
             for k,v in output_dict.items():
-                print(v.shape)
+                print(v.shape, v.dtype)
 
 
 if __name__ == '__main__':

@@ -92,12 +92,12 @@ def _extract_predictions_and_losses(model,
             input_dict[fields.InputDataFields.groundtruth_boxes],
         fields.InputDataFields.groundtruth_classes:
             input_dict[fields.InputDataFields.groundtruth_classes],
-        fields.InputDataFields.groundtruth_area:
-            input_dict[fields.InputDataFields.groundtruth_area],
-        fields.InputDataFields.groundtruth_is_crowd:
-            input_dict[fields.InputDataFields.groundtruth_is_crowd],
-        fields.InputDataFields.groundtruth_difficult:
-            input_dict[fields.InputDataFields.groundtruth_difficult]
+        #fields.InputDataFields.groundtruth_area:
+        #    input_dict[fields.InputDataFields.groundtruth_area],
+        #fields.InputDataFields.groundtruth_is_crowd:
+        #    input_dict[fields.InputDataFields.groundtruth_is_crowd],
+        #fields.InputDataFields.groundtruth_difficult:
+        #    input_dict[fields.InputDataFields.groundtruth_difficult]
     }
     if fields.InputDataFields.groundtruth_group_of in input_dict:
       groundtruth[fields.InputDataFields.groundtruth_group_of] = (
